@@ -1,0 +1,72 @@
+/* Production adaptation of SDF-UI AppHeader, navigation and layout patterns.
+   Shared colors/radii come from scripts/build-sdf-ui.mjs, never duplicated here. */
+:root { --sdf-sidebar-width: 210px; --sdf-page-gutter: 28px; }
+.app { padding-top: 56px; }
+.app .topbar {
+  position: fixed; inset: 0 0 auto; z-index: 30; height: 56px;
+  padding: 0 24px; background: var(--color-navy);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-gold) 25%, transparent);
+  color: var(--text-on-dark);
+}
+.app .topbar strong { color: var(--color-gold); font-size: 14px; font-weight: 600; letter-spacing: .03em; }
+.app .topbar .brand-text, .app .topbar .brand-logo-light { display: none; }
+.app .topbar .brand-logo-dark { display: block; width: auto; height: 28px; max-height: 28px; }
+.app .topbar .top-divider { display: block; font-size: 0; width: 1px; height: 20px; margin: 0 18px; background: var(--color-gold); opacity: .35; }
+.app .topbar .utilities { gap: 18px; color: var(--text-on-dark); }
+.app .topbar select { color: var(--text-on-dark); background: var(--color-navy); font-size: 12px; min-height: 30px; padding: 4px 8px; }
+.app .topbar .icon { color: var(--text-on-dark); min-height: 30px; }
+.app .sidebar {
+  top: 56px; width: 210px; padding: 20px 12px; background: var(--surface-card);
+  color: var(--text-primary); border-right: 1px solid var(--border-subtle);
+}
+.app .sidebar .nav-label { color: var(--text-tertiary); font-size: 10px; letter-spacing: .1em; margin: 24px 12px 10px; }
+.app .sidebar .workspace-label { margin-top: 0; }
+.app .sidebar .nav { font-size: 13px; min-height: 38px; padding: 8px 12px; border-radius: var(--radius-sm); color: var(--text-secondary); gap: 10px; }
+.app .sidebar .nav svg { width: 16px; height: 16px; }
+.app .sidebar .nav:hover { background: var(--surface-hover); color: var(--text-primary); }
+.app .sidebar .nav.active { background: var(--surface-selected); color: var(--text-primary); border-left-color: var(--interactive-primary); font-weight: 600; }
+.app .sidebar-bottom { color: var(--text-tertiary); padding: 24px 12px 0; font-size: 9px; }
+.app .shell { margin-left: 210px; width: calc(100% - 210px); }
+.app main { max-width: none; padding: 24px 28px 40px; }
+.app .page-heading { margin: 16px 0 24px; gap: 16px; }
+.app h1 { font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.25; }
+.app h2 { font-size: 17px; font-weight: 700; }
+.app h3 { font-size: 16px; }
+.app .page-heading p { font-size: 14px; margin-bottom: 0; }
+.app .page-heading .eyebrow { font-size: 10px; margin-bottom: 8px; letter-spacing: .1em; }
+.app .panel { border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.app .table-toolbar, .app .section-heading { padding: 18px 22px; }
+.app .table-toolbar { border-bottom: 1px solid var(--border-subtle); }
+.app table { font-size: 14px; }
+.app th { font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--text-secondary); background: var(--surface-subtle); }
+.app td { padding-top: 13px; padding-bottom: 13px; }
+.app button, .app .button { border-radius: var(--radius-sm); min-height: 36px; font-size: 14px; }
+.app button.primary, .app .button.primary { background: var(--interactive-primary); color: var(--text-on-primary); border-color: transparent; }
+.app button.primary:hover, .app .button.primary:hover { background: var(--interactive-primary-hover); }
+.app input, .app textarea, .app select { font-size: 14px; border-radius: var(--radius-sm); background: var(--surface-input); }
+.app .empty { padding: 52px 24px; }
+.app .empty h3 { margin-top: 16px; }
+.app .empty p { font-size: 14px; max-width: 450px; }
+.app .empty>svg { color: var(--text-tertiary); }
+.app .dev-banner { font-size: 11px; color: var(--text-tertiary); }
+.app .tabs button { font-size: 13px; border-radius: 0; }
+.app .tabs button.selected { border-bottom-color: var(--interactive-primary); }
+.app.reader-mode .shell, .app.attorney .shell { margin-left: 0; width: 100%; }
+.app.reader-mode main, .app.attorney main { padding: 10px 16px 0; }
+.app.reader-mode main { height: calc(100dvh - 56px); }
+.app.reader-mode .reader-heading h1 { font-size: 20px; }
+.app.reader-mode .viewer { min-height: 0; }
+.app .pdf-toolbar button, .app .page-controls button { min-height: 30px; font-size: 12px; }
+@media(max-width:760px) {
+  .app .sidebar { display: none; }
+  .app .shell { margin-left: 0; width: 100%; }
+  .app .topbar { padding: 0 14px; gap: 8px; }
+  .app .topbar .top-divider { margin: 0 12px; }
+  .app .topbar strong { font-size: 13px; }
+  .app .topbar .utilities { gap: 6px; }
+  .app main { padding: 18px 16px 30px; }
+  .app .page-heading { margin-top: 12px; }
+  .app h1 { font-size: 24px; }
+  .app .table-toolbar, .app .section-heading { padding: 16px; }
+  .app .empty { padding: 36px 16px; }
+}

@@ -6,6 +6,7 @@ import { pages, batesRange, matchesDocument } from '../shared/model'
 import { api, request, initAuth, signedIn, login, logout, fileBlob, saveBlob, type Config } from './api'
 import './style.css'
 import './viewer.css'
+import './sdf-shell.css'
 import BatesProgressDialog, { type BatesRun } from './BatesProgressDialog'
 import IndexAndTags from './IndexAndTags'
 import { useViewerSplit } from './useViewerSplit'
@@ -50,7 +51,7 @@ function App(){
   async function upload(files:FileList|File[]){if(!p)return;await run('Uploading PDFs',async()=>{let current=p;let count=0;try{for(const file of Array.from(files)){setBusy(`Uploading ${++count} of ${files.length}`);const r=await request(`/productions/${p.id}/documents`,{method:'POST',headers:{'Content-Type':'application/pdf','X-File-Name':encodeURIComponent(file.name),'If-Match':String(current.revision)},body:file});current=await r.json();setP(current)}setNotice(`${count} PDFs added. Review file status before labeling.`)}finally{setP(current)}})}
   async function downloadExport(exportId:string,name:string){if(p)await run('Preparing download',async()=>saveBlob(await fileBlob(`/productions/${p.id}/exports/${exportId}`),name))}
   return <div className={`app ${published?'attorney':''} ${productionId&&step==='Viewer'?'reader-mode':''}`}>
-    <aside className="sidebar"><a className="brand-link" href="/" aria-label="SDF logo — Productions" onClick={e=>{if(!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.altKey){e.preventDefault();navigate('/')}}}><img src="/sdf-ui/sdflaw-logo-white.png" alt="Schiller DuCanto & Fleck"/></a><div className="appname">Production</div><div className="side-rule"/>
+    <aside className="sidebar" aria-label="Production navigation"><div className="nav-label workspace-label">WORKSPACE</div>
       <button className={!productionId?'nav active':'nav'} onClick={()=>navigate('/')}><FolderOpen/>Productions</button>
       {p&&!published&&<><div className="nav-label">PRODUCTION WORKSPACE</div>{steps.map(([label,Icon])=><button key={label} className={'nav '+(step===label?'active':'')} onClick={()=>navigate(`/productions/${p.id}/${label}`)}><Icon/>{label==='Index'?'Index & Tags':label}</button>)}</>}
       {published&&<div className="nav active"><PanelsTopLeft/>Attorney viewer</div>}

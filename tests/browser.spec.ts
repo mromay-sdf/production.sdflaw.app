@@ -130,7 +130,7 @@ test('complete desktop workflow, dark theme, responsive layout, and offline file
   await expect(deletion.getByRole('button',{name:'Delete production',exact:true})).toBeDisabled()
   await deletion.getByRole('button',{name:'Cancel',exact:true}).click()
   await expect(page.getByRole('heading',{name:'First document production',exact:true})).toBeVisible()
-  await page.locator('.sidebar .brand-link').click()
+  await page.getByRole('link',{name:'SDF logo — Productions'}).click()
   await expect(page.getByRole('heading',{name:'Productions',exact:true})).toBeVisible()
   await page.getByRole('button',{name:'Delete First document production',exact:true}).click()
   await deletion.getByRole('textbox',{name:'Type the production name to confirm'}).fill('First document production')
