@@ -29,7 +29,8 @@ jobs:
         run: |
           pnpm prune --prod
           mkdir release
-          cp -R dist dist-server public offline node_modules package.json release/
+          cp -R dist dist-server public offline node_modules release/
+          cp deployment/package.json deployment/package-lock.json release/
           printf '#!/bin/sh\nset -eu\ncd /home/site/wwwroot\nexec node dist-server/index.js\n' > release/azure-start.sh
           cd release
           zip -qr ../sdf-production.zip .
