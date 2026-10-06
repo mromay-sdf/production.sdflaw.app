@@ -1,0 +1,53 @@
+{
+  "name": "sdf-production",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/build-sdf-ui.mjs && node scripts/copy-pdf-assets.mjs && tsx watch server/index.ts",
+    "dev:local": "node scripts/build-sdf-ui.mjs && node scripts/copy-pdf-assets.mjs && tsx watch --env-file=.env.local server/index.ts",
+    "preview:local": "node --env-file=.env.local --import ./scripts/local-preview.mjs dist-server/index.js",
+    "build": "node scripts/build-sdf-ui.mjs && node scripts/copy-pdf-assets.mjs && tsc --noEmit && vite build --configLoader native && esbuild server/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist-server/index.js",
+    "start": "node dist-server/index.js",
+    "test": "vitest run --configLoader native",
+    "test:browser": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "ui:sync": "node scripts/sync-sdf-ui.mjs",
+    "ui:build": "node scripts/build-sdf-ui.mjs"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.13.0",
+    "@azure/msal-browser": "^4.25.0",
+    "@azure/storage-blob": "^12.29.0",
+    "@pdf-lib/fontkit": "^1.1.1",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "fflate": "^0.8.2",
+    "helmet": "^8.1.0",
+    "jose": "^6.1.0",
+    "lucide-react": "^0.468.0",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "5.4.624",
+    "pg": "^8.16.3",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.5",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "esbuild": "^0.25.9",
+    "tsx": "^4.20.5",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "pnpm@11.19.0"
+}

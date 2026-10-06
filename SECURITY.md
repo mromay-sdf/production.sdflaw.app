@@ -1,0 +1,25 @@
+# Security boundaries
+
+All `/api` routes except non-confidential `/api/config` require Entra access tokens in production. The API verifies RS256 signatures using the tenant's JWKS, expiry/not-before, issuer, audience, tenant ID, SPA client ID, user object ID, and delegated `access_as_user` scope. No client-supplied identity header is trusted. No cookie authentication is used. State changes also require exact `Origin` matching. Cross-origin API access is not enabled.
+
+The MVP intentionally permits all assigned SDF app users to access all productions and edit the workspace. Attorney viewing mode simplifies presentation, not authorization. Production membership storage is prepared but no per-production ACL enforcement exists yet. Configure employee-group assignment and Conditional Access before go-live.
+
+Production records live in PostgreSQL; private immutable bytes live in Azure Blob Storage under UUID keys. Byte access is mediated by authenticated API endpoints with no-store responses. Storage references are never used as arbitrary filesystem paths. Generated filenames are sanitized and collision-resolved. SHA-256 integrity checks cover source/output bytes. Blob storage permissions and encryption, database credentials/TLS, backups, private networking, and tenant assignments are deployment responsibilities described in the deployment guide.
+
+Requests have schema and body limits: 50 MB per PDF, 500 PDFs/256 MB source data per production, 10,000 processing pages, and two expensive requests per instance. PDF processing remains in-process; pathological PDFs can exhaust resources. The application is not a malware scanner or complete PDF sanitizer. Consider the firm's upload malware scanning service and a separate constrained worker before raising limits or expanding access.
+
+The app uses Helmet/CSP, same-origin scripts/assets, local font and PDF renderer assets, safe React rendering, and text-only offline DOM insertion. Offline metadata is not concatenated into HTML. XLSX values are strings rather than formulas. The server does not log document contents, filenames, request bodies, tokens, or connection strings; generic internal error type is logged. Review hosting/proxy logging separately.
+
+Expected network access: browser to the app for authorized records/files; browser/server to Microsoft login/JWKS for authentication; server to configured PostgreSQL and Azure Storage. There are no analytics, public PDF services, remote fonts, or runtime CDNs. The offline viewer has `connect-src 'none'` and makes no network requests in the browser test.
+
+PDF.js runs with `isEvalSupported:false`, uses a bundled same-origin worker, and renders canvas pages rather than executing PDF JavaScript. Direct PDF opening delegates behavior to the browser's viewer. No OCR/full-text collection is performed.
+
+Offline packages contain confidential documents without authentication, as requested. The interface is read-only, but ordinary files can be copied/modified outside it. Export/revocation cannot recall downloaded content. Store and transfer offline artifacts under firm policy. Browser blob URLs and downloaded files similarly cannot be recalled by unpublish.
+
+Production deletion requires authentication, the expected Origin, current revision, and exact production-name confirmation. The record, snapshots, and membership rows are removed in one transaction, together with a durable queue of their referenced storage keys. File/production/export endpoints then return 404. Private-storage cleanup is idempotent and retries temporary failures; Azure retention/soft-delete policies and backups can retain historical copies. App users have the same deletion scope as their existing production-edit scope in this MVP. Previously abandoned blobs without surviving record references require a separate retention-aware cleanup process.
+
+Development auth must be explicitly enabled, binds only to loopback in the entrypoint, and is forbidden by production startup checks. SQLite/filesystem storage is for local development. Browser localStorage contains only theme and viewer-width preferences; MSAL sessionStorage contains its authentication session. Client/matter/document data is not persisted in localStorage. Offline width persistence is best-effort because browser policies may restrict storage for file origins.
+
+## Verified locally
+
+Automated tests cover unauthenticated fail-closed configuration, origin enforcement, revision races, rollback behavior through rejected mutations, missing/tampered outputs, immutable snapshots, unpublish, output naming, original preservation, and an offline package with no HTTP requests. An Edge browser test covers the end-to-end user workflow with synthetic PDFs. These are not a substitute for tenant/cloud deployment acceptance or a penetration test.

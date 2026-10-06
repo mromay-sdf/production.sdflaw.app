@@ -1,0 +1,17 @@
+node_modules/
+.pnpm-store/
+dist/
+dist-server/
+.env*
+!.env.example
+data/
+test-results/
+playwright-report/
+public/pdfjs/
+*.log
+tmp/
+outputs/
+output/
+release/
+*.zip
+vendor/SDF-UI-v1.1/

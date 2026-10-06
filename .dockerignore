@@ -1,0 +1,14 @@
+node_modules
+.pnpm-store
+.git
+.env*
+data
+test-results
+playwright-report
+vendor/SDF-UI-v1.1
+dist
+dist-server
+*.log
+tmp
+outputs
+output

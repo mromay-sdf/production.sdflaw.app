@@ -1,0 +1,13 @@
+* { box-sizing: border-box; }
+html { font-family: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--sdf-canvas); color: var(--sdf-text-primary); }
+body { margin: 0; background: var(--sdf-canvas); color: var(--sdf-text-primary); font-size: 16px; line-height: 1.45; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 3px solid var(--sdf-focus-ring); outline-offset: 2px; }
+::selection { background: var(--sdf-light-blue); color: var(--sdf-navy); }
+.sdf-muted { color: var(--sdf-text-secondary); }
+.sdf-eyebrow { margin: 0 0 6px; font-size: 11px; line-height: 1.2; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; color: var(--sdf-text-secondary); }
+.sdf-money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sdf-visually-hidden { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto!important; transition-duration:.01ms!important; animation-duration:.01ms!important; animation-iteration-count:1!important; } }
