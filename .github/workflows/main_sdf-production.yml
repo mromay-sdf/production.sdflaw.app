@@ -22,15 +22,19 @@ jobs:
       - run: pnpm test
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:browser
-      - name: Package installed Linux server dependencies
+      - name: Package self-contained Linux server dependencies
         run: |
-          pnpm prune --prod
           mkdir release
-          cp -R dist dist-server public offline node_modules release/
+          cp -R dist dist-server public offline release/
           cp deployment/package.json deployment/package-lock.json release/
+          npm ci --omit=dev --prefix release
           printf '#!/bin/sh\nset -eu\ncd /home/site/wwwroot\nexec node dist-server/index.js\n' > release/azure-start.sh
           cd release
           zip -qr ../sdf-production.zip .
+      - name: Verify packaged server starts without development dependencies
+        run: |
+          unzip -q sdf-production.zip -d release-check
+          node scripts/smoke-release.mjs release-check
       - uses: actions/upload-artifact@v4
         with:
           name: sdf-production-azure
