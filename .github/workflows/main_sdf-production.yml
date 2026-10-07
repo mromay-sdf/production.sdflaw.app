@@ -33,8 +33,9 @@ jobs:
           zip -qr ../sdf-production.zip .
       - name: Verify packaged server starts without development dependencies
         run: |
-          unzip -q sdf-production.zip -d release-check
-          node scripts/smoke-release.mjs release-check
+          release_check="$(mktemp -d)"
+          unzip -q sdf-production.zip -d "$release_check"
+          node scripts/smoke-release.mjs "$release_check"
       - uses: actions/upload-artifact@v4
         with:
           name: sdf-production-azure
