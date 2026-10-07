@@ -1,3 +1,5 @@
+> Authentication migration: current code uses App Service Entra authentication before page load. Follow [Entra gate setup](docs/ENTRA-GATE.md) for current settings; older SPA/API sign-in instructions below are historical.
+
 # SDF Production
 
 Source and deployment: [production.sdflaw.app](https://github.com/mromay-sdf/production.sdflaw.app). Shared design tokens and logos are synchronized from [SDF-UI](https://github.com/mromay-sdf/SDF-UI); see [UI updates and deployment](docs/SHARED-UI-AND-DEPLOYMENT.md).

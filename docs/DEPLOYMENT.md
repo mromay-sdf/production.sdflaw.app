@@ -1,3 +1,5 @@
+> Authentication migration: current code uses App Service Entra authentication before page load. Follow [Entra gate setup](ENTRA-GATE.md) for current settings; older SPA/API sign-in instructions below are historical.
+
 # Deploy to production.sdflaw.app
 
 No production deployment was performed by this implementation. Configure a staging environment first, then run the acceptance checks below with synthetic records.

@@ -16,8 +16,10 @@ export function createApp(store: Store, storage: DocumentStorage, auth: AuthConf
   const app=express(); app.disable('x-powered-by')
   app.use(helmet({contentSecurityPolicy:{directives:{defaultSrc:["'self'"],scriptSrc:["'self'"],styleSrc:["'self'","'unsafe-inline'"],imgSrc:["'self'",'data:','blob:'],fontSrc:["'self'"],connectSrc:["'self'",'https://login.microsoftonline.com',...(process.env.NODE_ENV!=='production' ? ['ws://127.0.0.1:4180'] : [])],frameSrc:["'self'",'blob:','https://login.microsoftonline.com'],objectSrc:["'none'"],upgradeInsecureRequests:process.env.NODE_ENV==='production' ? [] : null}},crossOriginEmbedderPolicy:false}))
   app.get('/healthz',(_req,res)=>res.json({status:'ok'}))
-  app.get('/api/config',(_req,res)=>res.set('Cache-Control','no-store').json({dev:auth.dev,testing:Boolean(auth.testing),tenant:auth.tenant,client:auth.client,scope:auth.scope}))
-  app.use('/api',authentication(auth),(_req,res,next)=>{res.set('Cache-Control','no-store');next()})
+  // Protect the entire application, including HTML, assets and configuration.
+  app.use((_req,res,next)=>{res.set('Cache-Control','no-store');next()})
+  app.use(authentication(auth))
+  app.get('/api/config',(_req,res)=>res.json({dev:auth.dev,testing:Boolean(auth.testing)}))
   app.use('/api',(req,res,next)=>{
     if(!['GET','HEAD'].includes(req.method) && req.headers.origin!==auth.origin) return res.status(403).json({error:'Request origin is not allowed.'})
     next()

@@ -1,6 +1,6 @@
 # Security boundaries
 
-All `/api` routes except non-confidential `/api/config` require Entra access tokens in production. The API verifies RS256 signatures using the tenant's JWKS, expiry/not-before, issuer, audience, tenant ID, SPA client ID, user object ID, and delegated `access_as_user` scope. No client-supplied identity header is trusted. No cookie authentication is used. State changes also require exact `Origin` matching. Cross-origin API access is not enabled.
+App Service Authentication requires SDF Entra sign-in before serving application HTML, assets, configuration, or APIs. The server independently verifies the signed `X-MS-TOKEN-AAD-ID-TOKEN` supplied by Azure: RS256 signature, issuer, identity-provider client audience, expiry, issued-at, tenant, and user object ID. Unsigned principal headers and the former browser bearer flow are not accepted. Easy Auth owns session cookies; token store must be enabled. State changes require exact `Origin` matching to protect cookie sessions. Cross-origin API access is not enabled. See [Entra gate setup](docs/ENTRA-GATE.md).
 
 The MVP intentionally permits all assigned SDF app users to access all productions and edit the workspace. Attorney viewing mode simplifies presentation, not authorization. Production membership storage is prepared but no per-production ACL enforcement exists yet. Configure employee-group assignment and Conditional Access before go-live.
 
@@ -18,7 +18,7 @@ Offline packages contain confidential documents without authentication, as reque
 
 Production deletion requires authentication, the expected Origin, current revision, and exact production-name confirmation. The record, snapshots, and membership rows are removed in one transaction, together with a durable queue of their referenced storage keys. File/production/export endpoints then return 404. Private-storage cleanup is idempotent and retries temporary failures; Azure retention/soft-delete policies and backups can retain historical copies. App users have the same deletion scope as their existing production-edit scope in this MVP. Previously abandoned blobs without surviving record references require a separate retention-aware cleanup process.
 
-Development auth must be explicitly enabled, binds only to loopback in the entrypoint, and is forbidden by production startup checks. SQLite/filesystem storage is for local development. Browser localStorage contains only theme and viewer-width preferences; MSAL sessionStorage contains its authentication session. Client/matter/document data is not persisted in localStorage. Offline width persistence is best-effort because browser policies may restrict storage for file origins.
+Development auth must be explicitly enabled, binds only to loopback in the entrypoint, and is forbidden by production startup checks. SQLite/filesystem storage is for local development. Browser localStorage contains only theme and viewer-width preferences; Microsoft sessions are managed by App Service cookies, without browser MSAL token storage. Client/matter/document data is not persisted in localStorage. Offline width persistence is best-effort because browser policies may restrict storage for file origins.
 
 ## Verified locally
 

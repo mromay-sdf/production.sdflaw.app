@@ -1,3 +1,5 @@
+> Authentication migration: current code uses App Service Entra authentication before page load. Follow [Entra gate setup](docs/ENTRA-GATE.md) for current settings; older SPA/API sign-in instructions below are historical.
+
 # Deploy SDF Production for limited testing
 
 This ZIP is a **container build package**, not a Kudu ZIP-deploy package. The existing sdf-production App Service uses a Linux container with sidecar support. Do not upload this ZIP to the current static placeholder and expect Node.js to run.

@@ -1,3 +1,5 @@
+> Authentication migration: current code uses App Service Entra authentication before page load. Follow [Entra gate setup](docs/ENTRA-GATE.md) for current settings; older SPA/API sign-in instructions below are historical.
+
 # SDF Production — Azure Code ZIP deployment
 
 Use `outputs/SDF-Production-Azure-Code.zip` for the Linux Node.js App Service. This contains the compiled frontend/server, required assets, and an npm lockfile. No Docker build is needed. Upload the ZIP itself, without extracting or adding a parent folder.
