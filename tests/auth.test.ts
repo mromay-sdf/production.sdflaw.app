@@ -45,7 +45,17 @@ test('rejects wrong audience, expired tokens, and invalid signatures',async()=>{
   const make=()=>new SignJWT({tid:tenant,oid:'employee'}).setProtectedHeader({alg:'RS256'}).setIssuer(`https://login.microsoftonline.com/${tenant}/v2.0`).setAudience(client).setIssuedAt().setExpirationTime('1h')
   for(const value of [await make().setAudience('other-app').sign(privateKey),await make().setExpirationTime(1).sign(privateKey),await make().sign(other.privateKey)])expect((await fetch(base+'/api/me',{headers:{'X-MS-TOKEN-AAD-ID-TOKEN':value}})).status).toBe(401)
 })
-test('health remains available without exposing app content',async()=>expect(await (await fetch(base+'/healthz')).json()).toEqual({status:'ok'}))
 test('session authentication still rejects mutations from another origin',async()=>{
   expect((await fetch(base+'/api/productions',{method:'POST',headers:{'X-MS-TOKEN-AAD-ID-TOKEN':await token(),Origin:'https://attacker.example'}})).status).toBe(403)
+})
+
+test('health remains available without exposing app content',async()=>expect(await (await fetch(base+'/healthz')).json()).toEqual({status:'ok'}))
+
+test('expired sign-in redirects pages to Microsoft while APIs return 401',async()=>{
+  const expired=await new SignJWT({tid:tenant,oid:'employee'}).setProtectedHeader({alg:'RS256'}).setIssuer(`https://login.microsoftonline.com/${tenant}/v2.0`).setAudience(client).setIssuedAt(1).setExpirationTime(2).sign(privateKey)
+  const headers={'X-MS-TOKEN-AAD-ID-TOKEN':expired}
+  const page=await fetch(base+'/p/example',{headers,redirect:'manual'})
+  expect(page.status).toBe(302)
+  expect(page.headers.get('location')).toBe('/.auth/login/aad?post_login_redirect_uri='+encodeURIComponent(origin+'/p/example'))
+  expect((await fetch(base+'/api/me',{headers})).status).toBe(401)
 })

@@ -12,6 +12,7 @@ On the existing `sdf-production` App Service, open Authentication and add Micros
 - Require authentication; unauthenticated requests redirect with HTTP 302 to Microsoft.
 - Allow only this client application and only the issuer tenant.
 - Enable token store so Azure supplies `X-MS-TOKEN-AAD-ID-TOKEN`.
+- In Edit authentication settings, add `https://production.sdflaw.app` to Allowed external redirect URLs. Easy Auth also checks this allowlist for cookie-authenticated browser POST requests; leaving it empty can block writes on the custom domain with a platform 403 before the request reaches the application. The application still enforces its exact `APP_ORIGIN` for mutations.
 - Azure generates a server credential for the selected registration; store it only in App Service settings. Track its selected expiration and rotate before expiry.
 - Confirm Web callback URLs for both `https://production.sdflaw.app/.auth/login/aad/callback` and `https://sdf-production-djcnajejfahngjas.centralus-01.azurewebsites.net/.auth/login/aad/callback`.
 - Retain enterprise application's assignment requirement and existing assigned users. Additional employees require deliberate assignment; tenant guests are not automatically employees. No Graph data permission is needed by this application.

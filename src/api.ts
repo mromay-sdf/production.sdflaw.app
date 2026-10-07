@@ -7,7 +7,7 @@ export async function logout(){location.assign('/.auth/logout?post_logout_redire
 export async function request(path:string, options:RequestInit={}) {
   const response=await fetch('/api'+path,{...options,credentials:'same-origin',redirect:'manual'})
   if(response.status===401||response.status===302||response.type==='opaqueredirect'){login();throw new Error('Your session has expired. Signing in again…')}
-  if(!response.ok){const body=await response.json().catch(()=>({error:'Request failed.'}));throw new Error(body.error)}
+  if(!response.ok){const body=await response.json().catch(()=>null);throw new Error(typeof body?.error==='string'?body.error:`Request failed (HTTP ${response.status}). Please reload and try again.`)}
   return response
 }
 export async function api<T>(path:string, body?:unknown, revision?:number):Promise<T> {
