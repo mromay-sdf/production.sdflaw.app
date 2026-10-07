@@ -14,6 +14,7 @@ let server:Server,store:Store,storage:PrivateStorage,root:string
 const origin='http://127.0.0.1:4181'
 test.beforeAll(async()=>{
   root=await mkdtemp(join(tmpdir(),'sdf-browser-'));store=new Store(undefined,root);await store.init();storage=new PrivateStorage(join(root,'blobs'))
+  await store.observeUser({id:'test-colleague',name:'Test colleague',email:'colleague@example.test'})
   const app=createApp(store,storage,{dev:true,origin});app.use(express.static(resolve('dist')));app.get('/{*path}',(_req,res)=>res.sendFile(resolve('dist/index.html')))
   server=app.listen(4181,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r))
 })
@@ -27,6 +28,14 @@ test('complete desktop workflow, dark theme, responsive layout, and offline file
   await page.getByRole('textbox',{name:'Matter / client',exact:true}).fill('Sample matter · Synthetic documents')
   await page.getByRole('dialog').getByRole('button',{name:'Create production',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Source documents',exact:true})).toBeVisible()
+  await page.locator('.sharing-panel summary').click()
+  await page.getByRole('textbox',{name:'Colleague’s sign-in email'}).fill('colleague@example.test')
+  await page.getByRole('button',{name:'Give access',exact:true}).click()
+  await expect(page.getByText('Test colleague',{exact:true})).toBeVisible()
+  await page.screenshot({path:'test-results/sharing.png',fullPage:true})
+  await page.getByRole('button',{name:'Remove access for Test colleague'}).click()
+  await expect(page.getByText('Test colleague',{exact:true})).toHaveCount(0)
+  await page.locator('.sharing-panel summary').click()
   const pdf=await PDFDocument.create();pdf.addPage().drawText('Synthetic banking records — UI verification'.replace('—','-'),{x:50,y:700});pdf.addPage().drawText('Synthetic second page',{x:50,y:700})
   const data=Buffer.from(await pdf.save())
   await page.locator('input[type=file]').setInputFiles([{name:'Bank records #1.pdf',mimeType:'application/pdf',buffer:data},{name:'Financial statements.pdf',mimeType:'application/pdf',buffer:data}])

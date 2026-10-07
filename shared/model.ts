@@ -1,6 +1,7 @@
 import type { BatesSettings } from './sdf-pdf/types/pdf'
 export type { BatesSettings }
-export interface Identity { id: string; name: string }
+export interface Identity { id: string; name: string; email?: string }
+export interface ProductionAccess { role: 'owner' | 'editor'; members: Identity[] }
 export interface Tag { id: string; name: string }
 export interface ProductionDocument {
   id: string; originalName: string; finalName?: string; displayName: string;
@@ -15,6 +16,7 @@ export interface ValidationResult { id: string; at: string; revision: number; ch
 export interface ProductionExport { id: string; at: string; by: Identity; kind: 'publish' | 'offline' | 'index' | 'indexed-pdf'; key?: string; snapshotId: string; revision: number }
 export interface BatesProgress { phase: 'Checking PDFs' | 'Applying Bates labels' | 'Saving PDFs' | 'Combining PDFs' | 'Saving production'; currentPage: number; totalPages: number; completedDocuments: number; totalDocuments: number; fileName: string; batesValue?: string }
 export interface Production {
+  access?: ProductionAccess;
   id: string; name: string; matter: string; description: string; createdBy: Identity;
   createdAt: string; updatedAt: string; revision: number;
   status: 'Draft' | 'Ready for Review' | 'Published' | 'Archived';

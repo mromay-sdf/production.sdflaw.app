@@ -34,20 +34,31 @@ export function createApp(store: Store, storage: DocumentStorage, auth: AuthConf
     res.on('finish',release);res.on('close',release);next()
   })
   app.use(express.json({limit:'1mb'}))
-  app.get('/api/me',(_req,res)=>res.json(res.locals.identity))
-  app.get('/api/productions',async(_req,res)=>res.json((await store.all()).map(p=>({...p,documents:p.documents.map(d=>({...d,originalKey:undefined,processedKey:d.processedKey ? 'available' : undefined})),exports:[]}))))
+  const present=async(p:Production,res:express.Response)=>({...p,access:await store.access(p,res.locals.identity.id)})
+  app.get('/api/me',async(_req,res)=>{await store.observeUser(res.locals.identity);res.json(res.locals.identity)})
+  app.get('/api/productions',async(_req,res)=>res.json(await Promise.all((await store.allFor(res.locals.identity.id)).map(async p=>({...await present(p,res),documents:p.documents.map(d=>({...d,originalKey:undefined,processedKey:d.processedKey ? 'available' : undefined})),exports:[]})))))
   app.post('/api/productions',async(req,res)=>{
     const body=z.object({name:z.string().trim().min(1).max(160),matter:z.string().trim().min(1).max(160),description:z.string().max(3000).default('')}).strict().parse(req.body)
     const now=new Date().toISOString()
     const p:Production={...body,id:randomUUID(),createdBy:res.locals.identity,createdAt:now,updatedAt:now,revision:1,status:'Draft',documents:[],tags:[],bates:defaultBates,exports:[]}
-    await store.create(p); res.status(201).json(p)
+    await store.create(p); res.status(201).json(await present(p,res))
   })
   const id = (value: unknown) => z.string().uuid().parse(value)
   const revision = (req: express.Request) => { const n=Number(req.headers['if-match']); if(!Number.isInteger(n)||n<1) throw new HttpError(428,'A current production revision is required.'); return n }
-  app.get('/api/productions/:id',async(req,res)=>res.json(await store.get(id(req.params.id))))
+  const guard:express.RequestHandler=async(req,res,next)=>{
+    try {const p=await store.get(id(req.params.id));await store.access(p,res.locals.identity.id);next()}catch(error){next(error)}
+  }
+  app.use('/api/productions/:id',guard)
+  app.use('/api/published/:id',guard)
+  const mutate=async(req:express.Request,res:express.Response,change:Parameters<Store['mutate']>[2])=>present(await store.mutate(id(req.params.id),revision(req),change,{principal:res.locals.identity.id}),res)
+  app.get('/api/productions/:id',async(req,res)=>res.json(await present(await store.get(id(req.params.id)),res)))
+  app.post('/api/productions/:id/access',async(req,res)=>{
+    const body=z.union([z.object({email:z.email().trim().toLowerCase()}).strict(),z.object({removeId:z.string().min(1).max(200)}).strict()]).parse(req.body)
+    res.json(await present(await store.changeAccess(id(req.params.id),revision(req),res.locals.identity.id,body),res))
+  })
   app.delete('/api/productions/:id',async(req,res)=>{
     const body=z.object({confirmationName:z.string().min(1).max(160)}).strict().parse(req.body)
-    await store.remove(id(req.params.id),revision(req),body.confirmationName)
+    await store.remove(id(req.params.id),revision(req),body.confirmationName,res.locals.identity.id)
     // Deletion has committed. A temporary cleanup failure must not report that
     // the production still exists; the persisted queue will be retried.
     await cleanupDeletedFiles(store,storage).catch(()=>{})
@@ -56,7 +67,7 @@ export function createApp(store: Store, storage: DocumentStorage, auth: AuthConf
   app.get('/api/published/:id',async(req,res)=>{
     const p=await store.get(id(req.params.id)); if(!p.publishedSnapshotId) throw new HttpError(404,'This production is not published.')
     const snapshot=await store.snapshot(p.publishedSnapshotId,p.id)
-    res.json({...snapshot,exports:[],validation:undefined,documents:snapshot.documents.map(d=>({...d,originalKey:undefined,processedKey:d.processedKey?'available':undefined,sha256:undefined,processedSha256:undefined}))})
+    res.json({...snapshot,access:await store.access(p,res.locals.identity.id),exports:[],validation:undefined,documents:snapshot.documents.map(d=>({...d,originalKey:undefined,processedKey:d.processedKey?'available':undefined,sha256:undefined,processedSha256:undefined}))})
   })
   app.post('/api/productions/:id/documents',express.raw({type:'application/pdf',limit:'50mb'}),async(req,res)=>{
     if(!Buffer.isBuffer(req.body)) throw new HttpError(400,'Upload PDF bytes with application/pdf content type.')
@@ -66,7 +77,7 @@ export function createApp(store: Store, storage: DocumentStorage, auth: AuthConf
     name=z.string().min(1).max(240).regex(/\.pdf$/i).parse(name)
     if(/[\x00-\x1f/\\]/.test(name)) throw new HttpError(400,'Invalid filename.')
     const result=await inspect(bytes)
-    res.json(await store.mutate(id(req.params.id),revision(req),async p=>{
+    res.json(await mutate(req,res,async p=>{
       if(p.documents.length>=500 || p.documents.reduce((n,d)=>n+d.size,0)+bytes.length>256*1024*1024) throw new HttpError(400,'Production limit: 500 files and 256 MB of source PDFs.')
       p.documents.push({id:randomUUID(),originalName:name,displayName:name.replace(/\.pdf$/i,''),originalKey:await storage.put(bytes),sha256:hash(bytes),size:bytes.length,...result,description:'',documentDate:'',tagIds:[],source:{provider:'upload'}})
       invalidate(p,true)
@@ -86,7 +97,7 @@ export function createApp(store: Store, storage: DocumentStorage, auth: AuthConf
   ])
   app.post('/api/productions/:id/actions',async(req,res)=>{
     const a=actionSchema.parse(req.body)
-    res.json(await store.mutate(id(req.params.id),revision(req),async p=>{
+    res.json(await mutate(req,res,async p=>{
       if(a.type==='metadata') {p.name=a.name;p.matter=a.matter;p.description=a.description}
       if(a.type==='remove') p.documents=p.documents.filter(d=>!a.ids.includes(d.id))
       if(a.type==='reorder') {if(a.ids.length!==p.documents.length||new Set(a.ids).size!==p.documents.length||a.ids.some(i=>!p.documents.some(d=>d.id===i))) throw new HttpError(400,'Invalid document order.');p.documents=a.ids.map(i=>p.documents.find(d=>d.id===i)!)}
@@ -101,25 +112,25 @@ export function createApp(store: Store, storage: DocumentStorage, auth: AuthConf
   })
   app.post('/api/productions/:id/bates',async(req,res)=>{
     const body=z.object({settings:batesSchema,combined:z.boolean().default(false)}).parse(req.body)
-    const productionId=id(req.params.id),expectedRevision=revision(req)
+    revision(req)
     if(!req.headers.accept?.includes('application/x-ndjson')) {
-      res.json(await store.mutate(productionId,expectedRevision,async p=>label(p,storage,body.settings,body.combined)));return
+      res.json(await mutate(req,res,async p=>label(p,storage,body.settings,body.combined)));return
     }
     res.type('application/x-ndjson').set('X-Accel-Buffering','no');res.flushHeaders()
     const send=(event:unknown)=>{if(!res.destroyed)res.write(JSON.stringify(event)+'\n')}
     const heartbeat=setInterval(()=>send({type:'heartbeat'}),15000)
     let last=0
     try {
-      const production=await store.mutate(productionId,expectedRevision,async p=>label(p,storage,body.settings,body.combined,progress=>{
+      const production=await mutate(req,res,async p=>label(p,storage,body.settings,body.combined,progress=>{
         const now=Date.now();if(progress.phase!=='Applying Bates labels'||now-last>=100||progress.currentPage===progress.totalPages){send({type:'progress',progress});last=now}
       }))
       send({type:'complete',production})
     } catch(error) {send({type:'error',error:error instanceof HttpError?error.message:'Bates processing failed. Your previous saved production is unchanged.'})}
     finally {clearInterval(heartbeat);res.end()}
   })
-  app.post('/api/productions/:id/validate',async(req,res)=>res.json(await store.mutate(id(req.params.id),revision(req),async p=>{await validate(p,storage)})))
+  app.post('/api/productions/:id/validate',async(req,res)=>res.json(await mutate(req,res,async p=>{await validate(p,storage)})))
   app.post('/api/productions/:id/publish',async(req,res)=>{
-    res.json(await store.mutate(id(req.params.id),revision(req),async(p,snapshot)=>{
+    res.json(await mutate(req,res,async(p,snapshot)=>{
       const v=await validate(p,storage);if(v.checks.some(c=>c.status==='error'))throw new HttpError(400,'Resolve validation errors before publishing.')
       const snapshotId=randomUUID(); await snapshot(snapshotId,{...p,revision:p.revision+1,updatedAt:new Date().toISOString()})
       p.publishedSnapshotId=snapshotId;p.status='Published'
@@ -128,7 +139,7 @@ export function createApp(store: Store, storage: DocumentStorage, auth: AuthConf
   })
   app.post('/api/productions/:id/exports',async(req,res)=>{
     const body=z.object({kind:z.enum(['offline','index','indexed-pdf']),simple:z.boolean().default(false),includeTags:z.boolean().default(true)}).parse(req.body)
-    res.json(await store.mutate(id(req.params.id),revision(req),async(p,snapshot)=>{
+    res.json(await mutate(req,res,async(p,snapshot)=>{
       const v=await validate(p,storage);if(v.checks.some(c=>c.status==='error'))throw new HttpError(400,'Resolve validation errors before exporting.')
       const snapshotId=randomUUID();await snapshot(snapshotId,{...p,revision:p.revision+1,updatedAt:new Date().toISOString()})
       const bytes=body.kind==='offline'?await offlinePackage(p,storage):body.kind==='indexed-pdf'?await indexedPdf(p,storage,body.includeTags):await excelIndex(p,body.simple)

@@ -9,7 +9,7 @@ let server:Server,base:string,privateKey:CryptoKey
 const tenant='sdf-tenant',client='sdf-web',origin='https://production.example.com'
 beforeAll(async()=>{
   const pair=await generateKeyPair('RS256');privateKey=pair.privateKey;signing.key=pair.publicKey
-  const app=createApp({} as never,{} as never,{dev:false,tenant,client,origin})
+  const app=createApp({observeUser:async()=>{}} as never,{} as never,{dev:false,tenant,client,origin})
   app.get('/assets/test.js',(_req,res)=>res.send('private app asset'))
   app.get('/{*path}',(_req,res)=>res.send('private app HTML'))
   server=app.listen(0,'127.0.0.1');await new Promise<void>(r=>server.once('listening',r));base=`http://127.0.0.1:${(server.address() as any).port}`
